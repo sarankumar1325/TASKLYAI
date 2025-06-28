@@ -1,8 +1,10 @@
 
-import React from 'react';
-import { Calendar, Clock, MoreVertical, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Clock, MoreVertical } from 'lucide-react';
 import { Task, Priority } from '@/types/task';
 import { Button } from '@/components/ui/button';
+import { AnimatedCheckbox } from '@/components/ui/animated-checkbox';
+import { cn } from '@/lib/utils';
 
 interface TaskCardProps {
   task: Task;
@@ -24,44 +26,57 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const [isCompleting, setIsCompleting] = useState(false);
   const isCompleted = task.status === 'completed';
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
 
+  const handleToggleComplete = async () => {
+    setIsCompleting(true);
+    
+    // Add micro animation delay
+    setTimeout(() => {
+      onToggleComplete(task.id);
+      setIsCompleting(false);
+    }, 200);
+  };
+
   return (
-    <div className={`task-card ${
-      isCompleted ? 'task-card-completed' : ''
-    } ${isOverdue ? 'task-card-overdue' : ''}`}>
+    <div className={cn(
+      'task-card group',
+      isCompleted && 'task-card-completed animate-task-complete',
+      isOverdue && 'task-card-overdue',
+      isCompleting && 'animate-confetti'
+    )}>
       <div className="flex items-start space-x-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onToggleComplete(task.id)}
-          className={`mt-1 p-1 rounded-full transition-all duration-200 ${
-            isCompleted
-              ? 'bg-green-500 text-white hover:bg-green-600'
-              : 'border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-400'
-          }`}
-        >
-          {isCompleted && <Check className="w-3 h-3" />}
-        </Button>
+        <div className="mt-1">
+          <AnimatedCheckbox
+            checked={isCompleted}
+            onChange={handleToggleComplete}
+            className="hover:scale-110 transition-transform duration-200"
+          />
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
-            <h3 className={`font-semibold text-lg transition-colors duration-200 ${
+            <h3 className={cn(
+              'font-semibold text-lg transition-all duration-300 font-inter',
               isCompleted 
                 ? 'line-through text-gray-500 dark:text-gray-400' 
                 : 'text-gray-900 dark:text-white'
-            }`}>
+            )}>
               {task.title}
             </h3>
-            <div className="flex items-center space-x-2">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium priority-${task.priority}`}>
+            <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <span className={cn(
+                'px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105',
+                `priority-${task.priority}`
+              )}>
                 {priorityIcons[task.priority]} {task.priority}
               </span>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 hover:scale-105"
               >
                 <MoreVertical className="w-4 h-4" />
               </Button>
@@ -69,11 +84,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
 
           {task.description && (
-            <p className={`text-sm mb-3 transition-colors duration-200 ${
+            <p className={cn(
+              'text-sm mb-3 transition-all duration-300 font-inter leading-relaxed',
               isCompleted 
                 ? 'text-gray-400 dark:text-gray-500' 
                 : 'text-gray-600 dark:text-gray-300'
-            }`}>
+            )}>
               {task.description}
             </p>
           )}
@@ -81,16 +97,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
               {task.dueDate && (
-                <div className={`flex items-center space-x-1 ${
-                  isOverdue ? 'text-red-500 dark:text-red-400' : ''
-                }`}>
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                <div className={cn(
+                  'flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-200',
+                  isOverdue 
+                    ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' 
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                )}>
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span className="font-medium">
+                    {new Date(task.dueDate).toLocaleDateString()}
+                  </span>
                 </div>
               )}
               
-              <div className="flex items-center space-x-1">
-                <Clock className="w-4 h-4" />
+              <div className="flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
+                <Clock className="w-3.5 h-3.5" />
                 <span>{new Date(task.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
@@ -100,13 +121,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 {task.tags.slice(0, 3).map((tag, index) => (
                   <span
                     key={index}
-                    className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30"
+                    className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-inter hover:scale-105 transition-transform duration-200"
                   >
                     {tag}
                   </span>
                 ))}
                 {task.tags.length > 3 && (
-                  <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
+                  <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border border-gray-200 dark:border-gray-600 font-inter hover:scale-105 transition-transform duration-200">
                     +{task.tags.length - 3}
                   </span>
                 )}
