@@ -5,11 +5,9 @@ import { Header } from '@/components/layout/Header';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { useTasks } from '@/hooks/useTasks';
-import { useTheme } from '@/hooks/useTheme';
 import { Task } from '@/types/task';
 
 const Today = () => {
-  const { isDarkMode, toggleTheme } = useTheme();
   const { 
     createTask, 
     updateTask, 
@@ -56,21 +54,19 @@ const Today = () => {
     <div className="min-h-screen bg-background">
       <Sidebar />
       
-      <div className="pl-72">
+      <div className="pl-64">
         <Header
           onCreateTask={() => setIsCreateModalOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          isDarkMode={isDarkMode}
-          onToggleTheme={toggleTheme}
         />
         
-        <main className="px-4 pb-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <main className="container max-w-screen-2xl px-6 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2 font-geist">
               Today's Tasks
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground font-geist">
               {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''} due today
             </p>
           </div>
