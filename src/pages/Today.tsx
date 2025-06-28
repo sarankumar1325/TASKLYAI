@@ -4,8 +4,8 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
-import { useTasks } from '@/hooks/useTasks';
-import { Task } from '@/types/task';
+import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
+import { Task, CreateTaskData } from '@/types/task';
 
 const Today = () => {
   const { 
@@ -14,7 +14,7 @@ const Today = () => {
     deleteTask, 
     toggleTaskComplete,
     getTasksForToday 
-  } = useTasks();
+  } = useSupabaseTasks();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,18 +30,12 @@ const Today = () => {
     return tasks;
   }, [getTasksForToday, searchQuery]);
 
-  const handleCreateTask = (taskData: {
-    title: string;
-    description: string;
-    priority: 'low' | 'medium' | 'high' | 'urgent';
-    dueDate?: Date;
-    tags: string[];
-  }) => {
+  const handleCreateTask = async (taskData: CreateTaskData) => {
     // Set due date to today if not specified
     const today = new Date();
-    createTask({
+    await createTask({
       ...taskData,
-      dueDate: taskData.dueDate || today,
+      due_date: taskData.due_date || today.toISOString(),
     });
   };
 

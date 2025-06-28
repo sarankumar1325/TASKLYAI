@@ -4,8 +4,8 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
-import { useTasks } from '@/hooks/useTasks';
-import { Task } from '@/types/task';
+import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
+import { Task, CreateTaskData } from '@/types/task';
 
 const Index = () => {
   const { 
@@ -16,7 +16,7 @@ const Index = () => {
     deleteTask, 
     toggleTaskComplete,
     filterTasks 
-  } = useTasks();
+  } = useSupabaseTasks();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,14 +25,8 @@ const Index = () => {
     return filterTasks(tasks, { search: searchQuery });
   }, [tasks, searchQuery, filterTasks]);
 
-  const handleCreateTask = (taskData: {
-    title: string;
-    description: string;
-    priority: 'low' | 'medium' | 'high' | 'urgent';
-    dueDate?: Date;
-    tags: string[];
-  }) => {
-    createTask(taskData);
+  const handleCreateTask = async (taskData: CreateTaskData) => {
+    await createTask(taskData);
   };
 
   const handleEditTask = (task: Task) => {
