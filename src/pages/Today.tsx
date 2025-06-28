@@ -8,24 +8,29 @@ import { useTasks } from '@/hooks/useTasks';
 import { useTheme } from '@/hooks/useTheme';
 import { Task } from '@/types/task';
 
-const Index = () => {
+const Today = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const { 
-    tasks, 
-    loading, 
     createTask, 
     updateTask, 
     deleteTask, 
     toggleTaskComplete,
-    filterTasks 
+    getTasksForToday 
   } = useTasks();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredTasks = useMemo(() => {
-    return filterTasks(tasks, { search: searchQuery });
-  }, [tasks, searchQuery, filterTasks]);
+  const todayTasks = useMemo(() => {
+    const tasks = getTasksForToday();
+    if (searchQuery) {
+      return tasks.filter(task => 
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    return tasks;
+  }, [getTasksForToday, searchQuery]);
 
   const handleCreateTask = (taskData: {
     title: string;
@@ -34,24 +39,18 @@ const Index = () => {
     dueDate?: Date;
     tags: string[];
   }) => {
-    createTask(taskData);
+    // Set due date to today if not specified
+    const today = new Date();
+    createTask({
+      ...taskData,
+      dueDate: taskData.dueDate || today,
+    });
   };
 
   const handleEditTask = (task: Task) => {
     console.log('Edit task:', task);
     // TODO: Implement edit functionality
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading TaskFlowAI...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,15 +68,15 @@ const Index = () => {
         <main className="px-4 pb-8">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              All Tasks
+              Today's Tasks
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} found
+              {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''} due today
             </p>
           </div>
           
           <TaskList
-            tasks={filteredTasks}
+            tasks={todayTasks}
             onToggleComplete={toggleTaskComplete}
             onEditTask={handleEditTask}
             onDeleteTask={deleteTask}
@@ -94,4 +93,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Today;
