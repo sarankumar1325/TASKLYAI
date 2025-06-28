@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* TaskFlowAI Design System - Glassmorphism & Premium Aesthetics */
+/* TaskFlowAI Design System - Enhanced Dual Theme */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -30,13 +30,10 @@
     --ring: 262 83% 58%;
     --radius: 0.75rem;
     
-    /* TaskFlowAI Custom Variables */
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    /* Light theme - Soft shadows instead of glass */
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   .dark {
@@ -60,7 +57,7 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 262 83% 58%;
     
-    /* Dark theme glass effects */
+    /* Dark theme - True glassmorphism */
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -69,28 +66,35 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-300;
   }
   
   body {
-    @apply bg-background text-foreground font-inter;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    @apply bg-background text-foreground font-inter overflow-x-hidden;
+    /* Light theme - Clean gradient */
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   .dark body {
-    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 100%);
+    /* Dark theme - Deep gradient */
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   }
 }
 
 @layer utilities {
-  /* Glassmorphism Effects */
+  /* Enhanced Glass Effects */
   .glass {
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+  }
+  
+  .dark .glass {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
   
   .glass-card {
@@ -101,7 +105,25 @@
     @apply glass rounded-xl px-4 py-2 transition-all duration-200 hover:scale-105 active:scale-95;
   }
   
-  /* Premium Animations */
+  /* Theme Toggle Button */
+  .theme-toggle {
+    @apply relative inline-flex h-10 w-10 items-center justify-center rounded-lg;
+    @apply bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700;
+    @apply border border-gray-200 dark:border-gray-700;
+    @apply shadow-sm hover:shadow-md dark:shadow-gray-900/20;
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .theme-toggle:hover {
+    @apply scale-110;
+  }
+  
+  .theme-toggle svg {
+    @apply h-5 w-5 text-gray-600 dark:text-gray-300;
+    @apply transition-all duration-300;
+  }
+  
+  /* Enhanced Animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
@@ -112,6 +134,10 @@
   
   .animate-scale-in {
     animation: scaleIn 0.2s ease-out forwards;
+  }
+  
+  .animate-theme-transition {
+    animation: theme-transition 0.3s ease-out forwards;
   }
   
   /* Custom Scrollbar */
@@ -126,16 +152,70 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--glass-border);
     border-radius: 3px;
+    transition: background 0.3s ease;
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
+    background: hsl(var(--primary));
+  }
+  
+  /* Component Utilities */
+  .nav-item {
+    @apply flex items-center space-x-3 px-4 py-3 rounded-xl font-medium;
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .nav-item-active {
+    @apply bg-gradient-to-r from-purple-500/20 to-pink-500/20;
+    @apply text-purple-600 dark:text-purple-400;
+    @apply shadow-sm;
+  }
+  
+  .nav-item-inactive {
+    @apply text-gray-600 dark:text-gray-400;
+    @apply hover:bg-gray-100 dark:hover:bg-white/10;
+    @apply hover:text-gray-900 dark:hover:text-white;
+  }
+  
+  .task-card {
+    @apply glass-card hover:scale-[1.02] cursor-pointer;
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  
+  .task-card-completed {
+    @apply opacity-75;
+  }
+  
+  .task-card-overdue {
+    @apply border-red-300 dark:border-red-500/30;
+    @apply bg-red-50/50 dark:bg-red-900/10;
   }
 }
 
 @layer components {
   .font-inter {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+  
+  /* Priority Badge Styles */
+  .priority-low {
+    @apply border-green-200 bg-green-50 text-green-700;
+    @apply dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400;
+  }
+  
+  .priority-medium {
+    @apply border-yellow-200 bg-yellow-50 text-yellow-700;
+    @apply dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-400;
+  }
+  
+  .priority-high {
+    @apply border-orange-200 bg-orange-50 text-orange-700;
+    @apply dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400;
+  }
+  
+  .priority-urgent {
+    @apply border-red-200 bg-red-50 text-red-700;
+    @apply dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400;
   }
 }
 
