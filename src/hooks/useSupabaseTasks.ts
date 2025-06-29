@@ -1,24 +1,14 @@
 
 import { useState, useEffect } from 'react';
-import { useUser, useAuth } from '@clerk/clerk-react';
-import { supabase, createAuthenticatedClient } from '@/integrations/supabase/client';
+import { useUser } from '@clerk/clerk-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Task, Status, Priority, CreateTaskData, UpdateTaskData, TaskFilters } from '@/types/task';
 import { toast } from 'sonner';
 
 export const useSupabaseTasks = () => {
   const { user } = useUser();
-  const { getToken } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Get authenticated Supabase client
-  const getAuthenticatedClient = async () => {
-    const token = await getToken({ template: 'supabase' });
-    if (token) {
-      return createAuthenticatedClient(token);
-    }
-    return supabase;
-  };
 
   // Fetch tasks from Supabase
   const fetchTasks = async () => {
@@ -29,8 +19,7 @@ export const useSupabaseTasks = () => {
     }
 
     try {
-      const authClient = await getAuthenticatedClient();
-      const { data, error } = await authClient
+      const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('user_id', user.id)
@@ -67,8 +56,7 @@ export const useSupabaseTasks = () => {
     }
 
     try {
-      const authClient = await getAuthenticatedClient();
-      const { data, error } = await authClient
+      const { data, error } = await supabase
         .from('tasks')
         .insert([
           {
@@ -109,8 +97,7 @@ export const useSupabaseTasks = () => {
     if (!user) return false;
 
     try {
-      const authClient = await getAuthenticatedClient();
-      const { data, error } = await authClient
+      const { data, error } = await supabase
         .from('tasks')
         .update(updates)
         .eq('id', taskId)
@@ -147,8 +134,7 @@ export const useSupabaseTasks = () => {
     if (!user) return false;
 
     try {
-      const authClient = await getAuthenticatedClient();
-      const { error } = await authClient
+      const { error } = await supabase
         .from('tasks')
         .delete()
         .eq('id', taskId)
