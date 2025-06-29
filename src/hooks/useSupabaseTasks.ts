@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Task, Status, CreateTaskData, UpdateTaskData, TaskFilters } from '@/types/task';
+import { Task, Status, Priority, CreateTaskData, UpdateTaskData, TaskFilters } from '@/types/task';
 import { toast } from 'sonner';
 
 export const useSupabaseTasks = () => {
@@ -27,7 +27,15 @@ export const useSupabaseTasks = () => {
         return;
       }
 
-      setTasks(data || []);
+      // Cast the data to proper Task type
+      const typedTasks: Task[] = (data || []).map(task => ({
+        ...task,
+        priority: task.priority as Priority,
+        status: task.status as Status,
+        tags: task.tags || []
+      }));
+
+      setTasks(typedTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast.error('Failed to load tasks');
@@ -59,9 +67,17 @@ export const useSupabaseTasks = () => {
         return null;
       }
 
-      setTasks(prev => [data, ...prev]);
+      // Cast the returned data to proper Task type
+      const newTask: Task = {
+        ...data,
+        priority: data.priority as Priority,
+        status: data.status as Status,
+        tags: data.tags || []
+      };
+
+      setTasks(prev => [newTask, ...prev]);
       toast.success('Task created successfully');
-      return data;
+      return newTask;
     } catch (error) {
       console.error('Error creating task:', error);
       toast.error('Failed to create task');
@@ -88,7 +104,15 @@ export const useSupabaseTasks = () => {
         return false;
       }
 
-      setTasks(prev => prev.map(task => task.id === taskId ? data : task));
+      // Cast the returned data to proper Task type
+      const updatedTask: Task = {
+        ...data,
+        priority: data.priority as Priority,
+        status: data.status as Status,
+        tags: data.tags || []
+      };
+
+      setTasks(prev => prev.map(task => task.id === taskId ? updatedTask : task));
       toast.success('Task updated successfully');
       return true;
     } catch (error) {

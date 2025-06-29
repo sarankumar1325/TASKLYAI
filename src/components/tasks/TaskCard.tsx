@@ -28,7 +28,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [isCompleting, setIsCompleting] = useState(false);
   const isCompleted = task.status === 'completed';
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !isCompleted;
 
   const handleToggleComplete = async () => {
     setIsCompleting(true);
@@ -96,7 +96,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-              {task.dueDate && (
+              {task.due_date && (
                 <div className={cn(
                   'flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-200',
                   isOverdue 
@@ -105,14 +105,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 )}>
                   <Calendar className="w-3.5 h-3.5" />
                   <span className="font-medium">
-                    {new Date(task.dueDate).toLocaleDateString()}
+                    {new Date(task.due_date).toLocaleDateString()}
                   </span>
                 </div>
               )}
               
               <div className="flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
                 <Clock className="w-3.5 h-3.5" />
-                <span>{new Date(task.createdAt).toLocaleDateString()}</span>
+                <span>{new Date(task.created_at).toLocaleDateString()}</span>
               </div>
             </div>
 
