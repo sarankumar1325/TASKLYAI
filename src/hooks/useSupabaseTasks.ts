@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,9 +18,6 @@ export const useSupabaseTasks = () => {
     }
 
     try {
-      // Set the user context for RLS
-      await supabase.rpc('set_claim', { claim: 'sub', value: user.id });
-      
       const { data, error } = await supabase
         .from('tasks')
         .select('*')

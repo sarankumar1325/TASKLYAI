@@ -9,7 +9,11 @@ export const useSupabaseWithClerk = () => {
     const token = await getToken({ template: 'supabase' });
     
     if (token) {
-      supabase.rest.headers['Authorization'] = `Bearer ${token}`;
+      // Set the auth token for the current session
+      await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: '',
+      });
     }
     
     return supabase;

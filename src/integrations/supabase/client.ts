@@ -6,7 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://dmlyxtqnbpmzzqroehnq.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtbHl4dHFuYnBtenpxcm9laG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMTgwNzksImV4cCI6MjA2NjY5NDA3OX0.nE1jdvJTQEiZmzb5LrCzDSPuOFdFUESxxM0KVf4ZDBE";
 
-// Create Supabase client with Clerk integration
+// Create Supabase client
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   global: {
     headers: {
@@ -17,5 +17,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Function to set Clerk token for Supabase requests
 export const setSupabaseToken = (token: string) => {
-  supabase.rest.headers['Authorization'] = `Bearer ${token}`;
+  // Use the correct method to set headers for authentication
+  supabase.realtime.setAuth(token);
 };
