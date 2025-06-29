@@ -12,9 +12,16 @@ export const useSupabaseTasks = () => {
 
   // Fetch tasks from Supabase
   const fetchTasks = async () => {
-    if (!user) return;
+    if (!user) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
 
     try {
+      // Set the user context for RLS
+      await supabase.rpc('set_claim', { claim: 'sub', value: user.id });
+      
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -46,7 +53,10 @@ export const useSupabaseTasks = () => {
 
   // Create a new task
   const createTask = async (taskData: CreateTaskData): Promise<Task | null> => {
-    if (!user) return null;
+    if (!user) {
+      toast.error('Please sign in to create tasks');
+      return null;
+    }
 
     try {
       const { data, error } = await supabase

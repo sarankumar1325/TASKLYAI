@@ -56,42 +56,48 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      
-      <div className="glass-card w-full max-w-md animate-scale-in relative z-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-geist">Create New Task</h2>
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={isSubmitting}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Task</h2>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose} 
+            disabled={isSubmitting}
+            className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-geist">
-              Task Title
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Task Title *
             </label>
             <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter task title..."
-              className="glass border-0 focus:ring-2 focus:ring-purple-500/50 font-geist"
+              className="w-full"
               required
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-geist">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Description
             </label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add task description..."
-              className="glass border-0 focus:ring-2 focus:ring-purple-500/50 resize-none font-geist"
+              className="w-full resize-none"
               rows={3}
               disabled={isSubmitting}
             />
@@ -99,14 +105,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-geist">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Flag className="w-4 h-4 inline mr-1" />
                 Priority
               </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as Priority)}
-                className="w-full glass border-0 rounded-lg p-2 focus:ring-2 focus:ring-purple-500/50 font-geist"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={isSubmitting}
               >
                 <option value="low">🟢 Low</option>
@@ -117,7 +123,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-geist">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
                 Due Date
               </label>
@@ -125,14 +131,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="glass border-0 focus:ring-2 focus:ring-purple-500/50 font-geist"
+                className="w-full"
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 font-geist">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tags (comma-separated)
             </label>
             <Input
@@ -140,24 +146,25 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="work, personal, urgent..."
-              className="glass border-0 focus:ring-2 focus:ring-purple-500/50 font-geist"
+              className="w-full"
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="flex space-x-3 pt-4">
+          {/* Footer */}
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               onClick={onClose}
-              className="flex-1 glass-button font-geist"
               disabled={isSubmitting}
+              className="px-6"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 font-geist"
+              className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isSubmitting || !title.trim()}
             >
               {isSubmitting ? 'Creating...' : 'Create Task'}
