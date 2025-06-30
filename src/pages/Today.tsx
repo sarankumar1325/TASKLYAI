@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
+import { AIChat } from '@/components/ai/AIChat';
 import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
 import { Task, CreateTaskData } from '@/types/task';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,7 +16,8 @@ const Today = () => {
     updateTask, 
     deleteTask, 
     toggleTaskComplete,
-    getTasksForToday 
+    getTasksForToday,
+    searchTasks 
   } = useSupabaseTasks();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -26,14 +28,37 @@ const Today = () => {
 
   const todayTasks = useMemo(() => {
     const tasks = getTasksForToday();
-    if (searchQuery) {
-      return tasks.filter(task => 
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
     return tasks;
-  }, [getTasksForToday, searchQuery]);
+  }, [getTasksForToday]);
+
+  const filteredTasks = useMemo(async () => {
+    if (searchQuery.trim()) {
+      const allSearchResults = await searchTasks(searchQuery);
+      // Filter search results to only show today's tasks
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      return allSearchResults.filter(task => {
+        if (!task.due_date) return false;
+        const dueDate = new Date(task.due_date);
+        return dueDate >= today && dueDate < tomorrow;
+      });
+    }
+    return todayTasks;
+  }, [todayTasks, searchQuery, searchTasks]);
+
+  // Use state to handle async filtered tasks
+  const [displayedTasks, setDisplayedTasks] = useState<Task[]>([]);
+
+  React.useEffect(() => {
+    const updateFilteredTasks = async () => {
+      const result = await filteredTasks;
+      setDisplayedTasks(result);
+    };
+    updateFilteredTasks();
+  }, [filteredTasks]);
 
   const handleCreateTask = async (taskData: CreateTaskData) => {
     // Set due date to today if not specified
@@ -71,12 +96,13 @@ const Today = () => {
               Today's Tasks
             </h1>
             <p className="text-muted-foreground font-inter text-sm sm:text-base">
-              {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''} due today
+              {displayedTasks.length} task{displayedTasks.length !== 1 ? 's' : ''} due today
+              {searchQuery && ` matching "${searchQuery}"`}
             </p>
           </div>
           
           <TaskList
-            tasks={todayTasks}
+            tasks={displayedTasks}
             onToggleComplete={toggleTaskComplete}
             onEditTask={handleEditTask}
             onDeleteTask={deleteTask}
@@ -96,6 +122,8 @@ const Today = () => {
         onUpdateTask={updateTask}
         task={editingTask}
       />
+
+      <AIChat />
     </div>
   );
 };

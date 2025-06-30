@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
+import { AIChat } from '@/components/ai/AIChat';
 import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
 import { Task, CreateTaskData } from '@/types/task';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -17,7 +18,7 @@ const Index = () => {
     updateTask, 
     deleteTask, 
     toggleTaskComplete,
-    filterTasks 
+    searchTasks 
   } = useSupabaseTasks();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -26,9 +27,23 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
 
-  const filteredTasks = useMemo(() => {
-    return filterTasks(tasks, { search: searchQuery });
-  }, [tasks, searchQuery, filterTasks]);
+  const filteredTasks = useMemo(async () => {
+    if (searchQuery.trim()) {
+      return await searchTasks(searchQuery);
+    }
+    return tasks;
+  }, [tasks, searchQuery, searchTasks]);
+
+  // Use state to handle async filtered tasks
+  const [displayedTasks, setDisplayedTasks] = useState<Task[]>([]);
+
+  React.useEffect(() => {
+    const updateFilteredTasks = async () => {
+      const result = await filteredTasks;
+      setDisplayedTasks(result);
+    };
+    updateFilteredTasks();
+  }, [filteredTasks]);
 
   const handleCreateTask = async (taskData: CreateTaskData) => {
     await createTask(taskData);
@@ -72,12 +87,13 @@ const Index = () => {
               All Tasks
             </h1>
             <p className="text-muted-foreground font-inter text-sm sm:text-base">
-              {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} found
+              {displayedTasks.length} task{displayedTasks.length !== 1 ? 's' : ''} found
+              {searchQuery && ` for "${searchQuery}"`}
             </p>
           </div>
           
           <TaskList
-            tasks={filteredTasks}
+            tasks={displayedTasks}
             onToggleComplete={toggleTaskComplete}
             onEditTask={handleEditTask}
             onDeleteTask={deleteTask}
@@ -97,6 +113,8 @@ const Index = () => {
         onUpdateTask={updateTask}
         task={editingTask}
       />
+
+      <AIChat />
     </div>
   );
 };

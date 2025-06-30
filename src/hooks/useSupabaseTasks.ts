@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +44,65 @@ export const useSupabaseTasks = () => {
       toast.error('Failed to load tasks');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Search tasks with advanced functionality
+  const searchTasks = async (query: string): Promise<Task[]> => {
+    if (!query.trim()) {
+      return tasks;
+    }
+
+    const searchLower = query.toLowerCase();
+    
+    return tasks.filter(task => {
+      // Search in title
+      if (task.title.toLowerCase().includes(searchLower)) return true;
+      
+      // Search in description
+      if (task.description?.toLowerCase().includes(searchLower)) return true;
+      
+      // Search in tags
+      if (task.tags.some(tag => tag.toLowerCase().includes(searchLower))) return true;
+      
+      // Search in priority
+      if (task.priority.toLowerCase().includes(searchLower)) return true;
+      
+      // Search in status
+      if (task.status.toLowerCase().includes(searchLower)) return true;
+      
+      return false;
+    });
+  };
+
+  // Chat with AI about tasks
+  const chatWithAI = async (message: string): Promise<string> => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const response = await fetch('/functions/v1/chat-with-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+        },
+        body: JSON.stringify({
+          message,
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const data = await response.json();
+      return data.response;
+    } catch (error) {
+      console.error('Error chatting with AI:', error);
+      throw error;
     }
   };
 
@@ -243,6 +301,8 @@ export const useSupabaseTasks = () => {
     deleteTask,
     toggleTaskComplete,
     filterTasks,
+    searchTasks,
+    chatWithAI,
     getTasksByStatus,
     getTasksForToday,
     getImportantTasks,
