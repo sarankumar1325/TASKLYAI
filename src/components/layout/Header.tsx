@@ -52,7 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 flex items-center justify-center shadow-2xl shadow-purple-500/25 group-hover:shadow-purple-500/40 transition-all duration-300 group-hover:scale-105">
                     <Sparkles className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
                   </div>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full border-3 border-white dark:border-slate-900 shadow-lg animate-pulse-soft"></div>
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
@@ -83,9 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Right Section - Actions */}
             <div className="flex items-center space-x-3 lg:space-x-4">
               {/* Theme Toggle */}
-              <div className="relative">
-                <ThemeToggle />
-              </div>
+              <ThemeToggle />
               
               {/* Notifications */}
               <div className="relative">
