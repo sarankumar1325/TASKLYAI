@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
+import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
 import { Task, CreateTaskData } from '@/types/task';
 
@@ -19,6 +20,8 @@ const Index = () => {
   } = useSupabaseTasks();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredTasks = useMemo(() => {
@@ -30,8 +33,13 @@ const Index = () => {
   };
 
   const handleEditTask = (task: Task) => {
-    console.log('Edit task:', task);
-    // TODO: Implement edit functionality
+    setEditingTask(task);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingTask(null);
   };
 
   if (loading) {
@@ -79,6 +87,13 @@ const Index = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreateTask={handleCreateTask}
+      />
+
+      <EditTaskModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onUpdateTask={updateTask}
+        task={editingTask}
       />
     </div>
   );

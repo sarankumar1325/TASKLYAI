@@ -1,9 +1,15 @@
 
 import React, { useState } from 'react';
-import { Calendar, Clock, MoreVertical } from 'lucide-react';
+import { Calendar, Clock, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Task, Priority } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { AnimatedCheckbox } from '@/components/ui/animated-checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface TaskCardProps {
@@ -40,6 +46,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     }, 200);
   };
 
+  const handleDelete = () => {
+    if (confirm('Are you sure you want to delete this task?')) {
+      onDelete(task.id);
+    }
+  };
+
   return (
     <div className={cn(
       'task-card group',
@@ -73,13 +85,33 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               )}>
                 {priorityIcons[task.priority]} {task.priority}
               </span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 hover:scale-105"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 hover:scale-105"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <DropdownMenuItem 
+                    onClick={() => onEdit(task)}
+                    className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Edit Task</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleDelete}
+                    className="flex items-center space-x-2 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Task</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
