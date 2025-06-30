@@ -7,6 +7,7 @@ import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
 import { Task, CreateTaskData } from '@/types/task';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Today = () => {
   const { 
@@ -21,6 +22,7 @@ const Today = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const isMobile = useIsMobile();
 
   const todayTasks = useMemo(() => {
     const tasks = getTasksForToday();
@@ -54,21 +56,21 @@ const Today = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      {!isMobile && <Sidebar />}
       
-      <div className="pl-64">
+      <div className={`${!isMobile ? 'pl-64' : ''} min-h-screen`}>
         <Header
           onCreateTask={() => setIsCreateModalOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
         
-        <main className="container max-w-screen-2xl px-6 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2 font-geist">
+        <main className="container max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2 font-inter">
               Today's Tasks
             </h1>
-            <p className="text-muted-foreground font-geist">
+            <p className="text-muted-foreground font-inter text-sm sm:text-base">
               {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''} due today
             </p>
           </div>
