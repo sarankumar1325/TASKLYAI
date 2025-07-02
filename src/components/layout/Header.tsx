@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Search, Plus, Bell, Sparkles, Menu, X } from 'lucide-react';
+import { Search, Plus, Menu, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile } from '@/components/auth/AuthGuard';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { MobileSidebar } from '@/components/layout/Sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeaderProps {
@@ -57,7 +58,6 @@ export const Header: React.FC<HeaderProps> = ({
                   <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
                     TaskFlowAI
                   </h1>
-                  <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 font-medium">Premium Edition</p>
                 </div>
               </div>
             </div>
@@ -83,18 +83,6 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center space-x-3 lg:space-x-4">
               {/* Theme Toggle */}
               <ThemeToggle />
-              
-              {/* Notifications */}
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-11 w-11 lg:h-12 lg:w-12 bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-700/80 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 border border-white/30 dark:border-white/10 rounded-xl shadow-lg backdrop-blur-xl transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-xl"
-                >
-                  <Bell className="w-5 h-5" />
-                </Button>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></div>
-              </div>
               
               {/* Create Task Button */}
               <Button
@@ -130,27 +118,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
-      {isMobile && isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          <div className="absolute top-24 left-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl p-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 p-3 rounded-xl bg-white/50 dark:bg-slate-800/50">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    TaskFlowAI
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Premium Edition</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile Sidebar */}
+      <MobileSidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
     </>
   );
 };

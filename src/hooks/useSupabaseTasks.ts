@@ -82,24 +82,19 @@ export const useSupabaseTasks = () => {
     }
 
     try {
-      const response = await fetch('https://dmlyxtqnbpmzzqroehnq.supabase.co/functions/v1/chat-with-tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtbHl4dHFuYnBtenpxcm9laG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMTgwNzksImV4cCI6MjA2NjY5NDA3OX0.nE1jdvJTQEiZmzb5LrCzDSPuOFdFUESxxM0KVf4ZDBE`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('chat-with-tasks', {
+        body: {
           message,
           userId: user.id,
-        }),
+        },
       });
 
-      if (!response.ok) {
+      if (error) {
+        console.error('Supabase function error:', error);
         throw new Error('Failed to get AI response');
       }
 
-      const data = await response.json();
-      return data.response;
+      return data.response || 'Sorry, I could not generate a response.';
     } catch (error) {
       console.error('Error chatting with AI:', error);
       throw error;
