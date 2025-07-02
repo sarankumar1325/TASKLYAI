@@ -82,11 +82,11 @@ export const useSupabaseTasks = () => {
     }
 
     try {
-      const response = await fetch('/functions/v1/chat-with-tasks', {
+      const response = await fetch('https://dmlyxtqnbpmzzqroehnq.supabase.co/functions/v1/chat-with-tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtbHl4dHFuYnBtenpxcm9laG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMTgwNzksImV4cCI6MjA2NjY5NDA3OX0.nE1jdvJTQEiZmzb5LrCzDSPuOFdFUESxxM0KVf4ZDBE`,
         },
         body: JSON.stringify({
           message,
