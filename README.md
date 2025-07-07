@@ -13,6 +13,8 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Clerk](https://img.shields.io/badge/Clerk-6C47FF?style=for-the-badge&logo=clerk&logoColor=white)](https://clerk.com/)
 [![Groq](https://img.shields.io/badge/Groq_AI-FF6B35?style=for-the-badge&logo=ai&logoColor=white)](https://groq.com/)
+
+<img width="1080" height="1080" alt="Image" src="https://github.com/user-attachments/assets/084a89b4-800a-42d6-8d9e-f358c5926307" />
 </div>
 
 ## 📋 Table of Contents
