@@ -1,23 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, Status, Priority, CreateTaskData, UpdateTaskData, TaskFilters } from '@/types/task';
 import { toast } from 'sonner';
+import { chatWithTasks, ChatResponse } from '@/services/groqService';
+
+// Query keys for better cache management
+export const taskKeys = {
+  all: ['tasks'] as const,
+  lists: () => [...taskKeys.all, 'list'] as const,
+  list: (filters: string) => [...taskKeys.lists(), { filters }] as const,
+  details: () => [...taskKeys.all, 'detail'] as const,
+  detail: (id: string) => [...taskKeys.details(), id] as const,
+};
 
 export const useSupabaseTasks = () => {
   const { user } = useUser();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Fetch tasks from Supabase
-  const fetchTasks = async () => {
-    if (!user) {
-      setTasks([]);
-      setLoading(false);
-      return;
-    }
+  // Fetch tasks with React Query
+  const {
+    data: tasks = [],
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: taskKeys.lists(),
+    queryFn: async (): Promise<Task[]> => {
+      if (!user) return [];
 
-    try {
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -26,130 +37,94 @@ export const useSupabaseTasks = () => {
 
       if (error) {
         console.error('Error fetching tasks:', error);
-        toast.error('Failed to load tasks');
-        return;
+        throw new Error('Failed to load tasks');
       }
 
-      // Cast the data to proper Task type
-      const typedTasks: Task[] = (data || []).map(task => ({
+      return (data || []).map(task => ({
         ...task,
         priority: task.priority as Priority,
         status: task.status as Status,
         tags: task.tags || []
       }));
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-      setTasks(typedTasks);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error('Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Create task mutation with optimistic updates
+  const createTaskMutation = useMutation({
+    mutationFn: async (taskData: CreateTaskData): Promise<Task> => {
+      if (!user) throw new Error('User not authenticated');
 
-  // Search tasks with advanced functionality
-  const searchTasks = async (query: string): Promise<Task[]> => {
-    if (!query.trim()) {
-      return tasks;
-    }
-
-    const searchLower = query.toLowerCase();
-    
-    return tasks.filter(task => {
-      // Search in title
-      if (task.title.toLowerCase().includes(searchLower)) return true;
-      
-      // Search in description
-      if (task.description?.toLowerCase().includes(searchLower)) return true;
-      
-      // Search in tags
-      if (task.tags.some(tag => tag.toLowerCase().includes(searchLower))) return true;
-      
-      // Search in priority
-      if (task.priority.toLowerCase().includes(searchLower)) return true;
-      
-      // Search in status
-      if (task.status.toLowerCase().includes(searchLower)) return true;
-      
-      return false;
-    });
-  };
-
-  // Chat with AI about tasks
-  const chatWithAI = async (message: string): Promise<string> => {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('chat-with-tasks', {
-        body: {
-          message,
-          userId: user.id,
-        },
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error('Failed to get AI response');
-      }
-
-      return data.response || 'Sorry, I could not generate a response.';
-    } catch (error) {
-      console.error('Error chatting with AI:', error);
-      throw error;
-    }
-  };
-
-  // Create a new task
-  const createTask = async (taskData: CreateTaskData): Promise<Task | null> => {
-    if (!user) {
-      toast.error('Please sign in to create tasks');
-      return null;
-    }
-
-    try {
       const { data, error } = await supabase
         .from('tasks')
-        .insert([
-          {
-            ...taskData,
-            user_id: user.id,
-            status: 'pending' as Status,
-          }
-        ])
+        .insert([{
+          ...taskData,
+          user_id: user.id,
+          status: 'pending' as Status,
+        }])
         .select()
         .single();
 
       if (error) {
         console.error('Error creating task:', error);
-        toast.error('Failed to create task');
-        return null;
+        throw new Error('Failed to create task');
       }
 
-      // Cast the returned data to proper Task type
-      const newTask: Task = {
+      return {
         ...data,
         priority: data.priority as Priority,
         status: data.status as Status,
         tags: data.tags || []
       };
+    },
+    onMutate: async (newTask) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
-      setTasks(prev => [newTask, ...prev]);
-      toast.success('Task created successfully');
-      return newTask;
-    } catch (error) {
-      console.error('Error creating task:', error);
+      // Snapshot the previous value
+      const previousTasks = queryClient.getQueryData<Task[]>(taskKeys.lists());
+
+      // Optimistically update to the new value
+      const optimisticTask: Task = {
+        id: `temp-${Date.now()}`,
+        ...newTask,
+        user_id: user?.id || '',
+        status: 'pending' as Status,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        priority: newTask.priority || 'medium',
+        tags: newTask.tags || [],
+        is_important: newTask.is_important || false,
+        is_archived: false,
+      };
+
+      queryClient.setQueryData<Task[]>(taskKeys.lists(), (old = []) => [optimisticTask, ...old]);
+
+      return { previousTasks };
+    },
+    onError: (err, newTask, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousTasks) {
+        queryClient.setQueryData(taskKeys.lists(), context.previousTasks);
+      }
       toast.error('Failed to create task');
-      return null;
-    }
-  };
+    },
+    onSuccess: () => {
+      toast.success('Task created successfully');
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    },
+  });
 
-  // Update a task
-  const updateTask = async (taskId: string, updates: UpdateTaskData): Promise<boolean> => {
-    if (!user) return false;
+  // Update task mutation
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, updates }: { taskId: string; updates: UpdateTaskData }): Promise<Task> => {
+      if (!user) throw new Error('User not authenticated');
 
-    try {
       const { data, error } = await supabase
         .from('tasks')
         .update(updates)
@@ -160,33 +135,45 @@ export const useSupabaseTasks = () => {
 
       if (error) {
         console.error('Error updating task:', error);
-        toast.error('Failed to update task');
-        return false;
+        throw new Error('Failed to update task');
       }
 
-      // Cast the returned data to proper Task type
-      const updatedTask: Task = {
+      return {
         ...data,
         priority: data.priority as Priority,
         status: data.status as Status,
         tags: data.tags || []
       };
+    },
+    onMutate: async ({ taskId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+      const previousTasks = queryClient.getQueryData<Task[]>(taskKeys.lists());
 
-      setTasks(prev => prev.map(task => task.id === taskId ? updatedTask : task));
-      toast.success('Task updated successfully');
-      return true;
-    } catch (error) {
-      console.error('Error updating task:', error);
+      queryClient.setQueryData<Task[]>(taskKeys.lists(), (old = []) =>
+        old.map(task => task.id === taskId ? { ...task, ...updates } : task)
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(taskKeys.lists(), context.previousTasks);
+      }
       toast.error('Failed to update task');
-      return false;
-    }
-  };
+    },
+    onSuccess: () => {
+      toast.success('Task updated successfully');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    },
+  });
 
-  // Delete a task
-  const deleteTask = async (taskId: string): Promise<boolean> => {
-    if (!user) return false;
+  // Delete task mutation
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string): Promise<void> => {
+      if (!user) throw new Error('User not authenticated');
 
-    try {
       const { error } = await supabase
         .from('tasks')
         .delete()
@@ -195,17 +182,58 @@ export const useSupabaseTasks = () => {
 
       if (error) {
         console.error('Error deleting task:', error);
-        toast.error('Failed to delete task');
-        return false;
+        throw new Error('Failed to delete task');
       }
+    },
+    onMutate: async (taskId) => {
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+      const previousTasks = queryClient.getQueryData<Task[]>(taskKeys.lists());
 
-      setTasks(prev => prev.filter(task => task.id !== taskId));
-      toast.success('Task deleted successfully');
-      return true;
-    } catch (error) {
-      console.error('Error deleting task:', error);
+      queryClient.setQueryData<Task[]>(taskKeys.lists(), (old = []) =>
+        old.filter(task => task.id !== taskId)
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, taskId, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(taskKeys.lists(), context.previousTasks);
+      }
       toast.error('Failed to delete task');
+    },
+    onSuccess: () => {
+      toast.success('Task deleted successfully');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    },
+  });
+
+  // Search tasks with debouncing
+  const searchTasks = async (query: string): Promise<Task[]> => {
+    if (!query.trim()) return tasks;
+
+    const searchLower = query.toLowerCase();
+    
+    return tasks.filter(task => {
+      if (task.title.toLowerCase().includes(searchLower)) return true;
+      if (task.description?.toLowerCase().includes(searchLower)) return true;
+      if (task.tags.some(tag => tag.toLowerCase().includes(searchLower))) return true;
+      if (task.priority.toLowerCase().includes(searchLower)) return true;
+      if (task.status.toLowerCase().includes(searchLower)) return true;
       return false;
+    });
+  };
+
+  // Chat with AI about tasks using Groq API
+  const chatWithAI = async (message: string): Promise<ChatResponse> => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      return await chatWithTasks(message, user.id, tasks);
+    } catch (error) {
+      console.error('Groq API error:', error);
+      throw error;
     }
   };
 
@@ -214,39 +242,47 @@ export const useSupabaseTasks = () => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return false;
 
-    const isCompleted = task.status === 'completed';
-    const updates: UpdateTaskData = {
-      status: isCompleted ? 'pending' : 'completed',
-      completed_at: isCompleted ? undefined : new Date().toISOString(),
-    };
-
-    return await updateTask(taskId, updates);
+    const newStatus: Status = task.status === 'completed' ? 'pending' : 'completed';
+    
+    try {
+      await updateTaskMutation.mutateAsync({ 
+        taskId, 
+        updates: { status: newStatus } 
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
-  // Filter tasks
+  // Archive task
+  const archiveTask = async (taskId: string): Promise<boolean> => {
+    try {
+      await updateTaskMutation.mutateAsync({ 
+        taskId, 
+        updates: { is_archived: true } 
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Filter tasks by various criteria
   const filterTasks = (tasks: Task[], filters: TaskFilters): Task[] => {
     return tasks.filter(task => {
-      if (filters.status && !filters.status.includes(task.status)) return false;
-      if (filters.priority && !filters.priority.includes(task.priority)) return false;
-      if (filters.tags && !filters.tags.some(tag => task.tags.includes(tag))) return false;
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        return (
-          task.title.toLowerCase().includes(searchLower) ||
-          task.description?.toLowerCase().includes(searchLower) ||
-          task.tags.some(tag => tag.toLowerCase().includes(searchLower))
-        );
-      }
+      if (filters.status && task.status !== filters.status) return false;
+      if (filters.priority && task.priority !== filters.priority) return false;
+      if (filters.isImportant !== undefined && task.is_important !== filters.isImportant) return false;
+      if (filters.isArchived !== undefined && task.is_archived !== filters.isArchived) return false;
       return true;
     });
   };
 
-  // Get tasks by status
   const getTasksByStatus = (status: Status) => {
     return tasks.filter(task => task.status === status);
   };
 
-  // Get tasks for today
   const getTasksForToday = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -260,48 +296,42 @@ export const useSupabaseTasks = () => {
     });
   };
 
-  // Get important tasks
   const getImportantTasks = () => {
-    return tasks.filter(task => 
-      task.priority === 'high' || task.priority === 'urgent'
-    );
+    return tasks.filter(task => task.is_important);
   };
 
-  // Get upcoming tasks
   const getUpcomingTasks = () => {
-    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return tasks.filter(task => {
       if (!task.due_date) return false;
-      return new Date(task.due_date) > now;
-    }).sort((a, b) => 
-      new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime()
-    );
+      const dueDate = new Date(task.due_date);
+      return dueDate > today;
+    });
   };
-
-  // Load tasks when user changes
-  useEffect(() => {
-    if (user) {
-      fetchTasks();
-    } else {
-      setTasks([]);
-      setLoading(false);
-    }
-  }, [user]);
 
   return {
     tasks,
     loading,
-    createTask,
-    updateTask,
-    deleteTask,
+    error,
+    refetch,
+    createTask: createTaskMutation.mutateAsync,
+    updateTask: (taskId: string, updates: UpdateTaskData) => 
+      updateTaskMutation.mutateAsync({ taskId, updates }),
+    deleteTask: deleteTaskMutation.mutateAsync,
     toggleTaskComplete,
-    filterTasks,
+    archiveTask,
     searchTasks,
     chatWithAI,
+    filterTasks,
     getTasksByStatus,
     getTasksForToday,
     getImportantTasks,
     getUpcomingTasks,
-    refetch: fetchTasks,
+    // Mutation states for UI feedback
+    isCreating: createTaskMutation.isPending,
+    isUpdating: updateTaskMutation.isPending,
+    isDeleting: deleteTaskMutation.isPending,
   };
 };

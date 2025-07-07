@@ -12,3 +12,17 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://taskflowai.com/sitemap.xml
+
+# Specific rules for popular search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Disallow certain paths if needed
+# Disallow: /admin/
+# Disallow: /api/

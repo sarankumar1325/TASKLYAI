@@ -1,21 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { AIChat } from '@/components/ai/AIChat';
 import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
+import { useSidebar } from '@/hooks/useSidebar';
 import { Task, CreateTaskData } from '@/types/task';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Completed = () => {
   const { 
+    tasks,
+    loading,
     createTask, 
     updateTask, 
     deleteTask, 
     toggleTaskComplete,
-    getTasksByStatus,
+    archiveTask,
     searchTasks 
   } = useSupabaseTasks();
   
@@ -24,10 +28,11 @@ const Completed = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
+  const { getSidebarClass } = useSidebar();
 
   const completedTasks = useMemo(() => {
-    return getTasksByStatus('completed');
-  }, [getTasksByStatus]);
+    return tasks.filter(task => task.status === 'completed');
+  }, [tasks]);
 
   const filteredTasks = useMemo(async () => {
     if (searchQuery.trim()) {
@@ -62,11 +67,22 @@ const Completed = () => {
     setEditingTask(null);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground font-inter">Loading completed tasks...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {!isMobile && <Sidebar />}
       
-      <div className={`${!isMobile ? 'pl-64' : ''} min-h-screen`}>
+      <div className={`${!isMobile ? getSidebarClass() : ''} min-h-screen transition-all duration-300`}>
         <Header
           onCreateTask={() => setIsCreateModalOpen(true)}
           searchQuery={searchQuery}
@@ -91,6 +107,9 @@ const Completed = () => {
             onDeleteTask={deleteTask}
           />
         </main>
+
+        {/* Footer with Pixelated Animation */}
+        <Footer />
       </div>
 
       <CreateTaskModal
@@ -103,6 +122,7 @@ const Completed = () => {
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         onUpdateTask={updateTask}
+        onArchiveTask={archiveTask}
         task={editingTask}
       />
 

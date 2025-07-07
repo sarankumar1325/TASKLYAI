@@ -4,21 +4,65 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TaskFlowAI - Premium Todo Application</title>
-    <meta name="description" content="TaskFlowAI - A sophisticated, AI-powered todo application with glassmorphism design" />
-    <meta name="author" content="TaskFlowAI Team" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.svg" />
+    
+    <!-- SEO Meta Tags -->
+    <title>Taskflowai - Smart Task Management with AI</title>
+    <meta name="description" content="Taskflowai - An intelligent task management application that helps you organize, prioritize, and complete your tasks with the power of AI assistance and beautiful glassmorphism design." />
+    <meta name="keywords" content="task management, AI, productivity, todo, tasks, workflow, organization, glassmorphism, smart tasks" />
+    <meta name="author" content="Taskflowai Team" />
 
-    <meta property="og:title" content="TaskFlowAI - Premium Todo Application" />
-    <meta property="og:description" content="A sophisticated, AI-powered todo application with glassmorphism design" />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="Taskflowai - Smart Task Management with AI" />
+    <meta property="og:description" content="An intelligent task management application with AI assistance and beautiful glassmorphism design" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/icon-192.svg" />
+    <meta property="og:url" content="https://taskflowai.com" />
+    <meta property="og:site_name" content="Taskflowai" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@taskflowai" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:title" content="Taskflowai - Smart Task Management with AI" />
+    <meta name="twitter:description" content="An intelligent task management application with AI assistance and beautiful glassmorphism design" />
+    <meta name="twitter:image" content="/icon-192.svg" />
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="msapplication-TileColor" content="#3B82F6" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/site.webmanifest" />
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Theme initialization script to prevent flash -->
+    <script>
+      (function() {
+        try {
+          const stored = localStorage.getItem('taskflowai-theme');
+          const theme = stored && ['light', 'dark', 'system'].includes(stored) ? stored : 'system';
+          const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {
+          // Fallback to light mode if there's an error
+          document.documentElement.classList.add('light');
+          document.documentElement.style.colorScheme = 'light';
+        }
+      })();
+    </script>
   </head>
 
   <body>

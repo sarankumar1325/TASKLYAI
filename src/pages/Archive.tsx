@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
@@ -12,7 +11,7 @@ import { useSidebar } from '@/hooks/useSidebar';
 import { Task, CreateTaskData } from '@/types/task';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const Today = () => {
+const Archive = () => {
   const { 
     tasks,
     loading,
@@ -31,36 +30,38 @@ const Today = () => {
   const isMobile = useIsMobile();
   const { getSidebarClass } = useSidebar();
 
-  const todayTasks = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return tasks.filter(task => {
-      if (!task.due_date) return false;
-      const dueDate = new Date(task.due_date);
-      return dueDate >= today && dueDate < tomorrow;
-    });
+  // Archived tasks are tasks with status 'archived' or completed tasks older than 30 days
+  const archivedTasks = useMemo(() => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    return tasks.filter(task => 
+      // Explicitly archived tasks
+      task.status === 'archived' ||
+      // Or completed tasks older than 30 days (auto-archived)
+      (task.status === 'completed' && 
+       task.completed_at && 
+       new Date(task.completed_at) < thirtyDaysAgo)
+    );
   }, [tasks]);
 
   const filteredTasks = useMemo(async () => {
     if (searchQuery.trim()) {
       const allSearchResults = await searchTasks(searchQuery);
-      // Filter search results to only show today's tasks
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      return allSearchResults.filter(task => {
-        if (!task.due_date) return false;
-        const dueDate = new Date(task.due_date);
-        return dueDate >= today && dueDate < tomorrow;
-      });
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      return allSearchResults.filter(task => 
+        // Explicitly archived tasks
+        task.status === 'archived' ||
+        // Or completed tasks older than 30 days (auto-archived)
+        (task.status === 'completed' && 
+         task.completed_at && 
+         new Date(task.completed_at) < thirtyDaysAgo)
+      );
     }
-    return todayTasks;
-  }, [todayTasks, searchQuery, searchTasks]);
+    return archivedTasks;
+  }, [archivedTasks, searchQuery, searchTasks]);
 
   // Use state to handle async filtered tasks
   const [displayedTasks, setDisplayedTasks] = useState<Task[]>([]);
@@ -74,12 +75,7 @@ const Today = () => {
   }, [filteredTasks]);
 
   const handleCreateTask = async (taskData: CreateTaskData) => {
-    // Set due date to today if not specified
-    const today = new Date();
-    await createTask({
-      ...taskData,
-      due_date: taskData.due_date || today.toISOString(),
-    });
+    await createTask(taskData);
   };
 
   const handleEditTask = (task: Task) => {
@@ -97,7 +93,7 @@ const Today = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-muted-foreground font-inter">Loading today's tasks...</p>
+          <p className="text-muted-foreground font-inter">Loading TaskFlowAI...</p>
         </div>
       </div>
     );
@@ -117,11 +113,14 @@ const Today = () => {
         <main className="container max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           <div className="mb-6 lg:mb-8">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2 font-inter">
-              Today's Tasks
+              Archived Tasks
             </h1>
             <p className="text-muted-foreground font-inter text-sm sm:text-base">
-              {displayedTasks.length} task{displayedTasks.length !== 1 ? 's' : ''} due today
-              {searchQuery && ` matching "${searchQuery}"`}
+              {displayedTasks.length} archived task{displayedTasks.length !== 1 ? 's' : ''} found
+              {searchQuery && ` for "${searchQuery}"`}
+            </p>
+            <p className="text-muted-foreground font-inter text-xs mt-1">
+              Tasks with archived status or completed more than 30 days ago
             </p>
           </div>
           
@@ -156,4 +155,4 @@ const Today = () => {
   );
 };
 
-export default Today;
+export default Archive;

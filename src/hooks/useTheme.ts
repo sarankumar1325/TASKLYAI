@@ -1,38 +1,93 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+type Theme = 'light' | 'dark' | 'system';
 
 export const useTheme = () => {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('taskflowai-theme');
-    if (saved) {
-      return JSON.parse(saved);
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Check if we're in the browser
+    if (typeof window === 'undefined') return 'system';
+    
+    const saved = localStorage.getItem('taskflowai-theme') as Theme;
+    if (saved && ['light', 'dark', 'system'].includes(saved)) {
+      return saved;
     }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return 'system';
   });
 
-  useEffect(() => {
-    localStorage.setItem('taskflowai-theme', JSON.stringify(isDarkMode));
-    
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Function to get system preference
+  const getSystemPreference = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }, []);
+
+  // Function to apply theme to DOM
+  const applyTheme = useCallback((currentTheme: Theme) => {
+    if (typeof window === 'undefined') return;
+
     const root = document.documentElement;
+    const shouldBeDark = currentTheme === 'dark' || 
+      (currentTheme === 'system' && getSystemPreference());
+
+    setIsDarkMode(shouldBeDark);
+
+    // Remove existing theme classes
+    root.classList.remove('light', 'dark');
     
-    if (isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    // Add appropriate theme class
+    root.classList.add(shouldBeDark ? 'dark' : 'light');
     
-    // Add theme transition class for smooth switching
-    root.classList.add('animate-theme-transition');
+    // Store the current theme
+    localStorage.setItem('taskflowai-theme', currentTheme);
     
-    // Remove transition class after animation
-    const timer = setTimeout(() => {
-      root.classList.remove('animate-theme-transition');
+    // Add smooth transition for theme changes
+    root.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+    
+    // Remove transition after it completes
+    setTimeout(() => {
+      root.style.transition = '';
     }, 300);
+  }, [getSystemPreference]);
+
+  // Initialize theme on mount
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme, applyTheme]);
+
+  // Listen to system theme changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
-    return () => clearTimeout(timer);
+    const handleChange = () => {
+      if (theme === 'system') {
+        applyTheme('system');
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme, applyTheme]);
+
+  // Toggle between light and dark (not system)
+  const toggleTheme = useCallback(() => {
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    setTheme(newTheme);
   }, [isDarkMode]);
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+  // Set specific theme
+  const setThemeMode = useCallback((newTheme: Theme) => {
+    setTheme(newTheme);
+  }, []);
 
-  return { isDarkMode, toggleTheme };
+  return { 
+    theme, 
+    isDarkMode, 
+    toggleTheme, 
+    setTheme: setThemeMode,
+    systemPreference: getSystemPreference()
+  };
 };

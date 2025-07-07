@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { X, Calendar, Flag } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { X, Calendar, Flag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,12 +9,14 @@ interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateTask: (taskData: CreateTaskData) => Promise<void>;
+  isCreating?: boolean;
 }
 
-export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
+export const CreateTaskModal: React.FC<CreateTaskModalProps> = React.memo(({
   isOpen,
   onClose,
   onCreateTask,
+  isCreating = false,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -24,9 +25,42 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [tags, setTags] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setTitle('');
+      setDescription('');
+      setPriority('medium');
+      setDueDate('');
+      setTags('');
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
+  // Memoized handlers
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+  }, []);
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value);
+  }, []);
+
+  const handlePriorityChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPriority(e.target.value as Priority);
+  }, []);
+
+  const handleDueDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setDueDate(e.target.value);
+  }, []);
+
+  const handleTagsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTags(e.target.value);
+  }, []);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || isSubmitting) return;
+    if (!title.trim() || isSubmitting || isCreating) return;
 
     setIsSubmitting(true);
     
@@ -39,21 +73,23 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
       });
 
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setPriority('medium');
-      setDueDate('');
-      setTags('');
       onClose();
     } catch (error) {
       console.error('Error creating task:', error);
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [title, description, priority, dueDate, tags, isSubmitting, isCreating, onCreateTask, onClose]);
+
+  const handleClose = useCallback(() => {
+    if (!isSubmitting && !isCreating) {
+      onClose();
+    }
+  }, [isSubmitting, isCreating, onClose]);
 
   if (!isOpen) return null;
+
+  const isLoading = isSubmitting || isCreating;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -64,8 +100,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={onClose} 
-            disabled={isSubmitting}
+            onClick={handleClose} 
+            disabled={isLoading}
             className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <X className="w-4 h-4" />
@@ -81,11 +117,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             <Input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={handleTitleChange}
               placeholder="Enter task title..."
               className="w-full"
               required
-              disabled={isSubmitting}
+              disabled={isLoading}
             />
           </div>
 
@@ -95,11 +131,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             </label>
             <Textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={handleDescriptionChange}
               placeholder="Add task description..."
               className="w-full resize-none"
               rows={3}
-              disabled={isSubmitting}
+              disabled={isLoading}
             />
           </div>
 
@@ -111,9 +147,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               </label>
               <select
                 value={priority}
-                onChange={(e) => setPriority(e.target.value as Priority)}
+                onChange={handlePriorityChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isSubmitting}
+                disabled={isLoading}
+                aria-label="Select task priority"
               >
                 <option value="low">🟢 Low</option>
                 <option value="medium">🟡 Medium</option>
@@ -130,9 +167,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               <Input
                 type="date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={handleDueDateChange}
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -144,10 +181,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             <Input
               type="text"
               value={tags}
-              onChange={(e) => setTags(e.target.value)}
+              onChange={handleTagsChange}
               placeholder="work, personal, urgent..."
               className="w-full"
-              disabled={isSubmitting}
+              disabled={isLoading}
             />
           </div>
 
@@ -156,22 +193,31 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
+              onClick={handleClose}
+              disabled={isLoading}
               className="px-6"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={isSubmitting || !title.trim()}
+              className="px-6 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || !title.trim()}
             >
-              {isSubmitting ? 'Creating...' : 'Create Task'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isCreating ? 'Creating...' : 'Creating...'}
+                </>
+              ) : (
+                'Create Task'
+              )}
             </Button>
           </div>
         </form>
       </div>
     </div>
   );
-};
+});
+
+CreateTaskModal.displayName = 'CreateTaskModal';

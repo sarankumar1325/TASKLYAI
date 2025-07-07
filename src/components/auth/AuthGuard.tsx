@@ -1,13 +1,27 @@
-
 import React from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  console.log('AuthGuard - isLoaded:', isLoaded, 'isSignedIn:', isSignedIn);
+
+  // Show loading state while Clerk is initializing
+  if (!isLoaded) {
+    console.log('Clerk is still loading...');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner size="lg" text="Initializing authentication..." />
+      </div>
+    );
+  }
+
   return (
     <>
       <SignedIn>
@@ -30,6 +44,9 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
                 Sign In to Continue
               </Button>
             </SignInButton>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              If you're seeing this, authentication is working but you need to sign in.
+            </p>
           </div>
         </div>
       </SignedOut>

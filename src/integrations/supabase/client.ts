@@ -3,8 +3,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://dmlyxtqnbpmzzqroehnq.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtbHl4dHFuYnBtenpxcm9laG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMTgwNzksImV4cCI6MjA2NjY5NDA3OX0.nE1jdvJTQEiZmzb5LrCzDSPuOFdFUESxxM0KVf4ZDBE";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://dmlyxtqnbpmzzqroehnq.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtbHl4dHFuYnBtenpxcm9laG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMTgwNzksImV4cCI6MjA2NjY5NDA3OX0.nE1jdvJTQEiZmzb5LrCzDSPuOFdFUESxxM0KVf4ZDBE";
 
 // Create Supabase client
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);

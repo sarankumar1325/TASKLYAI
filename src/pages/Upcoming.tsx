@@ -1,21 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { AIChat } from '@/components/ai/AIChat';
 import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
+import { useSidebar } from '@/hooks/useSidebar';
 import { Task, CreateTaskData } from '@/types/task';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Upcoming = () => {
   const { 
+    tasks,
+    loading,
     createTask, 
     updateTask, 
     deleteTask, 
     toggleTaskComplete,
-    getUpcomingTasks,
+    archiveTask,
     searchTasks 
   } = useSupabaseTasks();
   
@@ -24,10 +28,17 @@ const Upcoming = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
+  const { getSidebarClass } = useSidebar();
 
   const upcomingTasks = useMemo(() => {
-    return getUpcomingTasks();
-  }, [getUpcomingTasks]);
+    const now = new Date();
+    return tasks.filter(task => {
+      if (!task.due_date) return false;
+      return new Date(task.due_date) > now;
+    }).sort((a, b) => 
+      new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime()
+    );
+  }, [tasks]);
 
   const filteredTasks = useMemo(async () => {
     if (searchQuery.trim()) {
@@ -72,11 +83,22 @@ const Upcoming = () => {
     setEditingTask(null);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground font-inter">Loading upcoming tasks...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {!isMobile && <Sidebar />}
       
-      <div className={`${!isMobile ? 'pl-64' : ''} min-h-screen`}>
+      <div className={`${!isMobile ? getSidebarClass() : ''} min-h-screen transition-all duration-300`}>
         <Header
           onCreateTask={() => setIsCreateModalOpen(true)}
           searchQuery={searchQuery}
@@ -101,6 +123,9 @@ const Upcoming = () => {
             onDeleteTask={deleteTask}
           />
         </main>
+
+        {/* Footer with Pixelated Animation */}
+        <Footer />
       </div>
 
       <CreateTaskModal
@@ -113,6 +138,7 @@ const Upcoming = () => {
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         onUpdateTask={updateTask}
+        onArchiveTask={archiveTask}
         task={editingTask}
       />
 

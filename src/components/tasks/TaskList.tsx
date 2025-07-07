@@ -1,21 +1,29 @@
-
 import React from 'react';
 import { Task } from '@/types/task';
 import { TaskCard } from './TaskCard';
+import { TaskListSkeleton } from '@/components/ui/loading-spinner';
 
 interface TaskListProps {
   tasks: Task[];
   onToggleComplete: (taskId: string) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  isUpdating?: boolean;
+  isDeleting?: boolean;
 }
 
-export const TaskList: React.FC<TaskListProps> = ({
+export const TaskList: React.FC<TaskListProps> = React.memo(({
   tasks,
   onToggleComplete,
   onEditTask,
   onDeleteTask,
+  isUpdating = false,
+  isDeleting = false,
 }) => {
+  if (isUpdating || isDeleting) {
+    return <TaskListSkeleton count={3} />;
+  }
+
   if (tasks.length === 0) {
     return (
       <div className="glass-card text-center py-12">
@@ -45,4 +53,6 @@ export const TaskList: React.FC<TaskListProps> = ({
       ))}
     </div>
   );
-};
+});
+
+TaskList.displayName = 'TaskList';

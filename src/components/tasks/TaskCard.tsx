@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Calendar, Clock, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Task, Priority } from '@/types/task';
 import { Button } from '@/components/ui/button';
@@ -26,17 +25,42 @@ const priorityIcons: Record<Priority, string> = {
   urgent: '🔴',
 };
 
-export const TaskCard: React.FC<TaskCardProps> = ({
+export const TaskCard: React.FC<TaskCardProps> = React.memo(({
   task,
   onToggleComplete,
   onEdit,
   onDelete,
 }) => {
   const [isCompleting, setIsCompleting] = useState(false);
-  const isCompleted = task.status === 'completed';
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !isCompleted;
+  
+  // Memoized computed values
+  const isCompleted = useMemo(() => task.status === 'completed', [task.status]);
+  const isOverdue = useMemo(() => {
+    if (!task.due_date || isCompleted) return false;
+    return new Date(task.due_date) < new Date();
+  }, [task.due_date, isCompleted]);
 
-  const handleToggleComplete = async () => {
+  // Memoized formatted dates
+  const formattedDueDate = useMemo(() => {
+    if (!task.due_date) return null;
+    return new Date(task.due_date).toLocaleDateString();
+  }, [task.due_date]);
+
+  const formattedCreatedDate = useMemo(() => {
+    return new Date(task.created_at).toLocaleDateString();
+  }, [task.created_at]);
+
+  // Memoized visible tags
+  const visibleTags = useMemo(() => {
+    return task.tags.slice(0, 3);
+  }, [task.tags]);
+
+  const hasMoreTags = useMemo(() => {
+    return task.tags.length > 3;
+  }, [task.tags.length]);
+
+  // Optimized event handlers
+  const handleToggleComplete = useCallback(async () => {
     setIsCompleting(true);
     
     // Add micro animation delay
@@ -44,13 +68,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       onToggleComplete(task.id);
       setIsCompleting(false);
     }, 200);
-  };
+  }, [onToggleComplete, task.id]);
 
-  const handleDelete = () => {
+  const handleEdit = useCallback(() => {
+    onEdit(task);
+  }, [onEdit, task]);
+
+  const handleDelete = useCallback(() => {
     if (confirm('Are you sure you want to delete this task?')) {
       onDelete(task.id);
     }
-  };
+  }, [onDelete, task.id]);
 
   return (
     <div className={cn(
@@ -97,7 +125,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <DropdownMenuItem 
-                    onClick={() => onEdit(task)}
+                    onClick={handleEdit}
                     className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <Edit className="w-4 h-4" />
@@ -128,7 +156,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-              {task.due_date && (
+              {formattedDueDate && (
                 <div className={cn(
                   'flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-200',
                   isOverdue 
@@ -137,20 +165,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 )}>
                   <Calendar className="w-3.5 h-3.5" />
                   <span className="font-medium">
-                    {new Date(task.due_date).toLocaleDateString()}
+                    {formattedDueDate}
                   </span>
                 </div>
               )}
               
               <div className="flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
                 <Clock className="w-3.5 h-3.5" />
-                <span>{new Date(task.created_at).toLocaleDateString()}</span>
+                <span>{formattedCreatedDate}</span>
               </div>
             </div>
 
             {task.tags.length > 0 && (
               <div className="flex space-x-1">
-                {task.tags.slice(0, 3).map((tag, index) => (
+                {visibleTags.map((tag, index) => (
                   <span
                     key={index}
                     className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-inter hover:scale-105 transition-transform duration-200"
@@ -158,7 +186,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     {tag}
                   </span>
                 ))}
-                {task.tags.length > 3 && (
+                {hasMoreTags && (
                   <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border border-gray-200 dark:border-gray-600 font-inter hover:scale-105 transition-transform duration-200">
                     +{task.tags.length - 3}
                   </span>
@@ -170,4 +198,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+TaskCard.displayName = 'TaskCard';
